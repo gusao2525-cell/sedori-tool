@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>せどり完全版ツール ULTIMATE</title>
+<title>せどり(個人用)</title>
 <style>
 :root{--bg:#0f1115;--card:#1a1d24;--accent:#2962ff;--ok:#00e676;--ng:#ff5252}
 body{margin:0;font-family:sans-serif;background:var(--bg);color:#fff}
@@ -26,7 +26,7 @@ button{width:100%;padding:14px;font-size:16px;margin-top:8px;border:none;border-
 </head>
 <body>
 <div class="container">
-<h1>せどり完全版 ULTIMATE</h1>
+<h1>せどり(個人用)</h1>
 
 <div class="card">
 <h3>🔍 商品</h3>
@@ -88,40 +88,191 @@ button{width:100%;padding:14px;font-size:16px;margin-top:8px;border:none;border-
 </div>
 
 <script>
-function getK(){return encodeURIComponent(keyword.value)}
+
+// 検索
+function getK(){return encodeURIComponent(document.getElementById("keyword").value)}
 function searchAmazon(){window.open(`https://www.amazon.co.jp/s?k=${getK()}`)}
 function searchMercari(){window.open(`https://www.mercari.com/jp/search/?keyword=${getK()}`)}
 
+// 価格
 function autoPrice(){let a=+amazon.value,m=+mercari.value;if(a&&m)sell.value=Math.floor((a+m)/2)}
 function setFee(v){fee.value=v}
 
-function calc(){let c=+cost.value,s=+sell.value,f=+fee.value/100;if(!c||!s)return;let p=s-(s*f)-c;let roi=(p/c)*100;result.innerHTML=`<div class='big'>${p.toFixed(0)}円</div>ROI:${roi.toFixed(1)}%`;saveHistory()}
+// 利益
+function calc(){
+  let c=+cost.value,s=+sell.value,f=+fee.value/100;
+  if(!c||!s)return;
+  let p=s-(s*f)-c;
+  let roi=(p/c)*100;
+  result.innerHTML=`<div class='big'>${p.toFixed(0)}円</div>ROI:${roi.toFixed(1)}%`;
+  saveHistory();
+}
 
-function suggestPrice(){let a=+amazon.value||0,m=+mercari.value||0;let base=Math.min(a||m,m||a);let sp=Math.floor(base*0.95);sell.value=sp}
+// AI価格
+function suggestPrice(){
+  let a=+amazon.value||0,m=+mercari.value||0;
+  let base=Math.min(a||m,m||a);
+  let sp=Math.floor(base*0.95);
+  sell.value=sp;
+}
 
-function fullAuto(){let c=+cost.value,s=+sell.value,f=+fee.value/100,r=+rivals.value||0,soldN=+sold.value||0;let p=s-(s*f)-c;let roi=(p/c)*100;let score=0;if(p>1500)score+=30;else if(p>500)score+=15;if(roi>30)score+=30;else if(roi>15)score+=15;if(r<10)score+=20;else if(r<30)score+=10;if(soldN>r)score+=20;else if(soldN>r/2)score+=10;let msg=score>80?"🔥神":score>60?"◎":score>40?"○":"✖";result.innerHTML=`総合:${score} ${msg}`;saveHistory()}
+// 総合判定
+function fullAuto(){
+  let c=+cost.value,s=+sell.value,f=+fee.value/100,r=+rivals.value||0,soldN=+sold.value||0;
+  let p=s-(s*f)-c;
+  let roi=(p/c)*100;
+  let score=0;
 
-function gen(){out.value=`【${title.value}】\n${desc.value}\n即購入OK`}
-function copyText(){navigator.clipboard.writeText(out.value)}
+  if(p>1500)score+=30; else if(p>500)score+=15;
+  if(roi>30)score+=30; else if(roi>15)score+=15;
+  if(r<10)score+=20; else if(r<30)score+=10;
+  if(soldN>r)score+=20; else if(soldN>r/2)score+=10;
 
-function save(){localStorage.setItem('sedori',JSON.stringify({k:keyword.value,cost:cost.value}))}
-function load(){let d=JSON.parse(localStorage.getItem('sedori')||'{}');keyword.value=d.k||'';cost.value=d.cost||''}
+  let msg=score>80?"🔥神":score>60?"◎":score>40?"○":"✖";
+  result.innerHTML=`総合:${score} ${msg}`;
+  saveHistory();
+}
+
+// ★ 疑似AI出品文（修正版）
+function gen(){
+  const t = document.getElementById("title").value.trim();
+  const memo = document.getElementById("desc").value.trim();
+  const platform = document.getElementById("platform").value;
+
+  if(!t || !memo){
+    alert("商品名と状態を入力してください");
+    return;
+  }
+
+  const lines = memo.split("\n").filter(l => l);
+
+  let condition = "中古品";
+  let conditionText = "多少の使用感はありますが、まだまだご使用いただけます。";
+
+  if(memo.includes("新品")){
+    condition = "新品未使用";
+    conditionText = "新品未使用品です。";
+  }
+  else if(memo.includes("美品")){
+    condition = "目立った傷や汚れなし";
+    conditionText = "比較的きれいな状態です。";
+  }
+  else if(memo.includes("傷") || memo.includes("汚れ")){
+    condition = "やや傷や汚れあり";
+    conditionText = "一部に傷や汚れがありますが使用可能です。";
+  }
+
+  let sizeMatch = memo.match(/\d{2,3}cm/);
+  let sizeText = sizeMatch ? `サイズ：${sizeMatch[0]}` : "";
+
+  const keywords = t.split(/[\s　]/).filter(k => k.length > 1);
+  const tags = keywords.map(k => "#" + k).join(" ");
+
+  const hooks = [
+    "早い者勝ちです！",
+    "即購入OKです！",
+    "人気商品のためお早めに！"
+  ];
+  const hook = hooks[Math.floor(Math.random()*hooks.length)];
+
+  let platformText = "";
+  if(platform === "ヤフオク"){
+    platformText = "ノークレーム・ノーリターンでお願いいたします。";
+  }
+
+  const text =
+`【${t}】
+
+ご覧いただきありがとうございます。
+
+${t}の出品です。
+
+状態：${condition}
+${conditionText}
+
+${sizeText}
+${lines.join("\n")}
+
+写真にて状態をご確認ください。
+
+${hook}
+
+${platformText}
+
+丁寧に梱包して発送いたします。
+
+${tags}`;
+
+  document.getElementById("out").value = text;
+}
+
+// コピー
+function copyText(){navigator.clipboard.writeText(document.getElementById("out").value)}
+
+// 保存
+function save(){
+  localStorage.setItem('sedori',JSON.stringify({
+    k:keyword.value,
+    cost:cost.value
+  }));
+}
+function load(){
+  let d=JSON.parse(localStorage.getItem('sedori')||'{}');
+  keyword.value=d.k||'';
+  cost.value=d.cost||'';
+}
 
 // 履歴
-function saveHistory(){let h=JSON.parse(localStorage.getItem('hist')||'[]');h.unshift({k:keyword.value,p:sell.value});localStorage.setItem('hist',JSON.stringify(h.slice(0,20)));renderHistory()}
-function renderHistory(){let h=JSON.parse(localStorage.getItem('hist')||'[]');history.innerHTML=h.map(x=>`<div>${x.k} : ${x.p}円</div>`).join('')}
+function saveHistory(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  h.unshift({k:keyword.value,p:sell.value});
+  localStorage.setItem('hist',JSON.stringify(h.slice(0,20)));
+  renderHistory();
+}
+function renderHistory(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  history.innerHTML=h.map(x=>`<div>${x.k} : ${x.p}円</div>`).join('');
+}
 renderHistory()
 
-function exportCSV(){let h=JSON.parse(localStorage.getItem('hist')||'[]');let csv="商品,価格\n"+h.map(x=>`${x.k},${x.p}`).join("\n");let blob=new Blob([csv]);let a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sedori.csv';a.click()}
+// CSV
+function exportCSV(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  let csv="商品,価格\n"+h.map(x=>`${x.k},${x.p}`).join("\n");
+  let blob=new Blob([csv]);
+  let a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='sedori.csv';
+  a.click();
+}
 
 // OCR補助
-function scanPriceOCR(e){let t=prompt('価格入力');if(!t)return;let n=t.replace(/[^\d]/g,'');if(!amazon.value)amazon.value=n;else mercari.value=n}
+function scanPriceOCR(e){
+  let t=prompt('価格入力');
+  if(!t)return;
+  let n=t.replace(/[^\d]/g,'');
+  if(!amazon.value)amazon.value=n;
+  else mercari.value=n;
+}
 
 // バーコード
-async function scanBarcode(e){if(!('BarcodeDetector'in window))return;const file=e.target.files[0];const img=await createImageBitmap(file);const detector=new BarcodeDetector({formats:['ean_13']});const codes=await detector.detect(img);if(codes[0])keyword.value=codes[0].rawValue}
+async function scanBarcode(e){
+  if(!('BarcodeDetector'in window))return;
+  const file=e.target.files[0];
+  const img=await createImageBitmap(file);
+  const detector=new BarcodeDetector({formats:['ean_13']});
+  const codes=await detector.detect(img);
+  if(codes[0])keyword.value=codes[0].rawValue;
+}
 
-// コピペ自動入力
-document.addEventListener('paste',(e)=>{let t=e.clipboardData.getData('text');let n=t.replace(/[^\d]/g,'');if(document.activeElement.tagName==='INPUT'&&n)document.activeElement.value=n})
+// コピペ自動
+document.addEventListener('paste',(e)=>{
+  let t=e.clipboardData.getData('text');
+  let n=t.replace(/[^\d]/g,'');
+  if(document.activeElement.tagName==='INPUT'&&n){
+    document.activeElement.value=n;
+  }
+});
 </script>
 </body>
 </html>
