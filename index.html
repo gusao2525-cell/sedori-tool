@@ -2,276 +2,277 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>せどりプロツール</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>せどり(個人用)</title>
 <style>
-:root{
-  --bg:#0b0f17;
-  --card:rgba(255,255,255,0.05);
-  --accent:#4f8cff;
-  --text:#e6e9ef;
-}
-body{
-  margin:0;
-  font-family:-apple-system,BlinkMacSystemFont;
-  background:linear-gradient(#0b0f17,#0f1624);
-  color:var(--text);
-}
-.container{padding:14px;max-width:500px;margin:auto;}
-.card{
-  background:var(--card);
-  backdrop-filter:blur(10px);
-  border-radius:16px;
-  padding:14px;
-  margin-bottom:12px;
-}
-input,textarea,select{
-  width:100%;
-  padding:12px;
-  margin-top:6px;
-  border-radius:12px;
-  border:none;
-  background:#111;
-  color:#fff;
-}
-button{
-  width:100%;
-  padding:14px;
-  margin-top:8px;
-  border:none;
-  border-radius:12px;
-  font-weight:bold;
-}
-.row{display:flex;gap:8px}
+:root{--bg:#0f1115;--card:#1a1d24;--accent:#2962ff;--ok:#00e676;--ng:#ff5252}
+body{margin:0;font-family:sans-serif;background:var(--bg);color:#fff}
+.container{padding:10px 10px 120px}
+.card{background:var(--card);border-radius:14px;padding:12px;margin-bottom:10px}
+h1{text-align:center;font-size:18px}
+input,textarea,select{width:100%;padding:12px;font-size:16px;border-radius:12px;border:none;margin-top:6px;background:#111;color:#fff}
+button{width:100%;padding:14px;font-size:16px;margin-top:8px;border:none;border-radius:12px;font-weight:bold}
+.btn{background:var(--accent)} .calc{background:#00c853} .ai{background:#ff9800}
+.result{margin-top:10px;padding:12px;background:#111;border-radius:12px;text-align:center}
+.big{font-size:22px;font-weight:bold}
+.row{display:flex;gap:6px}
 .row button{flex:1}
-
-/* ボタン色 */
-.amazon{background:#fff;color:#000}
-.mercari{background:#ff2e2e;color:#fff}
-.btn{background:#4f8cff;color:#fff}
-.calc{background:#00c853}
-.ai{background:#ff9800}
-
-.result{
-  margin-top:10px;
-  padding:12px;
-  background:#111;
-  border-radius:12px;
-  text-align:center;
-}
-.big{font-size:24px;font-weight:bold}
-
-canvas{margin-top:10px;background:#000;border-radius:8px}
+.quick{display:flex;gap:6px}
+.quick button{flex:1;background:#333}
+.history{font-size:12px;margin-top:8px}
+.history div{padding:6px;border-bottom:1px solid #222}
+.sticky{position:fixed;bottom:0;left:0;right:0;background:#111;padding:10px;display:flex;gap:6px}
 </style>
 </head>
-
 <body>
 <div class="container">
-
-<h2>せどりプロツール</h2>
+<h1>せどり(個人用)</h1>
 
 <div class="card">
-<input id="keyword" placeholder="商品名">
+<h3>🔍 商品</h3>
+<input id="keyword" placeholder="商品名 or JAN">
 <div class="row">
-<button class="amazon" onclick="searchAmazon()">Amazon</button>
-<button class="mercari" onclick="searchMercari()">メルカリ</button>
+<button class="btn" onclick="searchAmazon()">Amazon</button>
+<button class="btn" onclick="searchMercari()">メルカリ</button>
 </div>
+<input type="file" accept="image/*" capture="environment" onchange="scanBarcode(event)">
+<input type="file" accept="image/*" capture="environment" onchange="scanPriceOCR(event)">
 </div>
 
 <div class="card">
+<h3>💰 相場</h3>
 <input id="amazon" placeholder="Amazon価格">
 <input id="mercari" placeholder="メルカリ価格">
-<button onclick="autoPrice()">平均価格</button>
-<button class="ai" onclick="suggestPrice()">売れる価格AI</button>
+<button onclick="autoPrice()">平均</button>
+<button class="ai" onclick="suggestPrice()">売れる価格</button>
 </div>
 
 <div class="card">
-<input id="cost" placeholder="仕入れ">
+<h3>📊 判定</h3>
+<input id="cost" placeholder="仕入れ値">
 <input id="sell" placeholder="販売価格">
 <input id="fee" placeholder="手数料%">
+<div class="quick">
+<button onclick="setFee(10)">10%</button>
+<button onclick="setFee(8)">8%</button>
+<button onclick="setFee(15)">15%</button>
+</div>
 <input id="rivals" placeholder="出品数">
 <input id="sold" placeholder="売れ数">
-
-<button class="calc" onclick="calc()">利益計算</button>
-<button class="ai" onclick="fullAuto()">総合判定</button>
-
+<button class="calc" onclick="calc()">利益</button>
+<button class="ai" onclick="fullAuto()">完全判定</button>
 <div id="result" class="result"></div>
-<canvas id="chart" width="300" height="150"></canvas>
 </div>
 
 <div class="card">
+<h3>✍️ 出品文</h3>
 <input id="title" placeholder="商品名">
 <textarea id="desc" placeholder="状態"></textarea>
-<select id="platform">
-<option>メルカリ</option>
-<option>ヤフオク</option>
-</select>
-<button onclick="gen()">出品文生成</button>
+<select id="platform"><option>メルカリ</option><option>ヤフオク</option></select>
+<button onclick="gen()">生成</button>
 <textarea id="out"></textarea>
+<button onclick="copyText()">コピー</button>
 </div>
 
+<div class="card">
+<h3>📦 履歴</h3>
+<div id="history" class="history"></div>
+<button onclick="exportCSV()">CSV出力</button>
+</div>
+
+</div>
+
+<div class="sticky">
+<button onclick="save()">保存</button>
+<button onclick="load()">呼出</button>
 </div>
 
 <script>
 
 // 検索
-function searchAmazon(){
-  let q=document.getElementById("keyword").value;
-  window.open("https://www.amazon.co.jp/s?k="+encodeURIComponent(q));
-}
-function searchMercari(){
-  let q=document.getElementById("keyword").value;
-  window.open("https://www.mercari.com/jp/search/?keyword="+encodeURIComponent(q));
-}
+function getK(){return encodeURIComponent(document.getElementById("keyword").value)}
+function searchAmazon(){window.open(`https://www.amazon.co.jp/s?k=${getK()}`)}
+function searchMercari(){window.open(`https://www.mercari.com/jp/search/?keyword=${getK()}`)}
 
 // 価格
-function autoPrice(){
-  let a=+amazon.value,m=+mercari.value;
-  if(a&&m)sell.value=Math.floor((a+m)/2);
+function autoPrice(){let a=+amazon.value,m=+mercari.value;if(a&&m)sell.value=Math.floor((a+m)/2)}
+function setFee(v){fee.value=v}
+
+// 利益
+function calc(){
+  let c=+cost.value,s=+sell.value,f=+fee.value/100;
+  if(!c||!s)return;
+  let p=s-(s*f)-c;
+  let roi=(p/c)*100;
+  result.innerHTML=`<div class='big'>${p.toFixed(0)}円</div>ROI:${roi.toFixed(1)}%`;
+  saveHistory();
 }
 
 // AI価格
 function suggestPrice(){
-  let a=+amazon.value||0;
-  let m=+mercari.value||0;
-  let r=+rivals.value||0;
-
+  let a=+amazon.value||0,m=+mercari.value||0;
   let base=Math.min(a||m,m||a);
-  let adjust=0.95;
-
-  if(r>50)adjust=0.85;
-  else if(r>20)adjust=0.9;
-
-  sell.value=Math.floor(base*adjust);
+  let sp=Math.floor(base*0.95);
+  sell.value=sp;
 }
 
-// 利益
-let priceHistory=[];
-
-function calc(){
-  let c=+cost.value,s=+sell.value,f=+fee.value/100;
-  if(!c||!s)return;
-
-  let p=s-(s*f)-c;
-  let roi=(p/c)*100;
-
-  result.innerHTML=`<div class='big'>${p.toFixed(0)}円</div>ROI:${roi.toFixed(1)}%`;
-
-  saveProfit(p);
-  addPricePoint();
-}
-
-// グラフ
-function addPricePoint(){
-  let p=+sell.value;
-  if(!p)return;
-
-  priceHistory.push(p);
-  if(priceHistory.length>20)priceHistory.shift();
-
-  drawChart();
-}
-
-function drawChart(){
-  let ctx=document.getElementById("chart").getContext("2d");
-  ctx.clearRect(0,0,300,150);
-
-  ctx.beginPath();
-  priceHistory.forEach((v,i)=>{
-    let x=i*(300/20);
-    let y=150-(v/Math.max(...priceHistory))*140;
-    if(i===0)ctx.moveTo(x,y);
-    else ctx.lineTo(x,y);
-  });
-  ctx.strokeStyle="#00e676";
-  ctx.stroke();
-}
-
-// 回転率
-function getRotation(){
-  let r=+rivals.value||0;
-  let s=+sold.value||0;
-  return r? s/r : 0;
-}
-
-// 総合
+// 総合判定
 function fullAuto(){
-  let c=+cost.value,s=+sell.value,f=+fee.value/100;
+  let c=+cost.value,s=+sell.value,f=+fee.value/100,r=+rivals.value||0,soldN=+sold.value||0;
   let p=s-(s*f)-c;
   let roi=(p/c)*100;
-  let rot=getRotation();
-
   let score=0;
-  if(p>2000)score+=30;
-  else if(p>1000)score+=20;
 
-  if(roi>40)score+=30;
-  else if(roi>20)score+=20;
+  if(p>1500)score+=30; else if(p>500)score+=15;
+  if(roi>30)score+=30; else if(roi>15)score+=15;
+  if(r<10)score+=20; else if(r<30)score+=10;
+  if(soldN>r)score+=20; else if(soldN>r/2)score+=10;
 
-  if(rot>1)score+=25;
-  else if(rot>0.5)score+=15;
-
-  let rank=score>85?"🔥神":score>60?"◎":score>40?"○":"△";
-
-  result.innerHTML=`${score}点 ${rank}<br>回転:${rot.toFixed(2)}`;
-
-  ultimateJudge();
+  let msg=score>80?"🔥神":score>60?"◎":score>40?"○":"✖";
+  result.innerHTML=`総合:${score} ${msg}`;
+  saveHistory();
 }
 
-// 最終判断
-function ultimateJudge(){
-  let c=+cost.value,s=+sell.value,f=+fee.value/100;
-  let p=s-(s*f)-c;
-  let roi=(p/c)*100;
-  let rot=getRotation();
-
-  let d="NG";
-  if(p>1500&&roi>30&&rot>0.5)d="🔥仕入れGO";
-  else if(p>800)d="◎OK";
-
-  result.innerHTML+=`<br>${d}`;
-}
-
-// 月次
-function saveProfit(p){
-  let d=JSON.parse(localStorage.getItem("profit")||"[]");
-  let m=new Date().toISOString().slice(0,7);
-  d.push({m,p});
-  localStorage.setItem("profit",JSON.stringify(d));
-}
-
-// 出品文
+// ★ 疑似AI出品文（修正版）
 function gen(){
-  let t=title.value.trim();
-  let m=desc.value.trim();
-  let pf=platform.value;
+  const t = document.getElementById("title").value.trim();
+  const memo = document.getElementById("desc").value.trim();
+  const platform = document.getElementById("platform").value;
 
-  let cond="中古品";
-  if(m.includes("新品"))cond="新品未使用";
+  if(!t || !memo){
+    alert("商品名と状態を入力してください");
+    return;
+  }
 
-  let size=m.match(/\d{2,3}cm/);
-  let sizeText=size?`サイズ:${size[0]}`:"";
+  const lines = memo.split("\n").filter(l => l);
 
-  let tags=t.split(" ").map(x=>"#"+x).join(" ");
+  let condition = "中古品";
+  let conditionText = "多少の使用感はありますが、まだまだご使用いただけます。";
 
-  out.value=
+  if(memo.includes("新品")){
+    condition = "新品未使用";
+    conditionText = "新品未使用品です。";
+  }
+  else if(memo.includes("美品")){
+    condition = "目立った傷や汚れなし";
+    conditionText = "比較的きれいな状態です。";
+  }
+  else if(memo.includes("傷") || memo.includes("汚れ")){
+    condition = "やや傷や汚れあり";
+    conditionText = "一部に傷や汚れがありますが使用可能です。";
+  }
+
+  let sizeMatch = memo.match(/\d{2,3}cm/);
+  let sizeText = sizeMatch ? `サイズ：${sizeMatch[0]}` : "";
+
+  const keywords = t.split(/[\s　]/).filter(k => k.length > 1);
+  const tags = keywords.map(k => "#" + k).join(" ");
+
+  const hooks = [
+    "早い者勝ちです！",
+    "即購入OKです！",
+    "人気商品のためお早めに！"
+  ];
+  const hook = hooks[Math.floor(Math.random()*hooks.length)];
+
+  let platformText = "";
+  if(platform === "ヤフオク"){
+    platformText = "ノークレーム・ノーリターンでお願いいたします。";
+  }
+
+  const text =
 `【${t}】
+
+ご覧いただきありがとうございます。
 
 ${t}の出品です。
 
-状態:${cond}
+状態：${condition}
+${conditionText}
 
 ${sizeText}
-${m}
+${lines.join("\n")}
 
-即購入OK
+写真にて状態をご確認ください。
 
-${pf==="ヤフオク"?"ノークレームノーリターン":""}
+${hook}
+
+${platformText}
+
+丁寧に梱包して発送いたします。
 
 ${tags}`;
+
+  document.getElementById("out").value = text;
 }
 
+// コピー
+function copyText(){navigator.clipboard.writeText(document.getElementById("out").value)}
+
+// 保存
+function save(){
+  localStorage.setItem('sedori',JSON.stringify({
+    k:keyword.value,
+    cost:cost.value
+  }));
+}
+function load(){
+  let d=JSON.parse(localStorage.getItem('sedori')||'{}');
+  keyword.value=d.k||'';
+  cost.value=d.cost||'';
+}
+
+// 履歴
+function saveHistory(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  h.unshift({k:keyword.value,p:sell.value});
+  localStorage.setItem('hist',JSON.stringify(h.slice(0,20)));
+  renderHistory();
+}
+function renderHistory(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  history.innerHTML=h.map(x=>`<div>${x.k} : ${x.p}円</div>`).join('');
+}
+renderHistory()
+
+// CSV
+function exportCSV(){
+  let h=JSON.parse(localStorage.getItem('hist')||'[]');
+  let csv="商品,価格\n"+h.map(x=>`${x.k},${x.p}`).join("\n");
+  let blob=new Blob([csv]);
+  let a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='sedori.csv';
+  a.click();
+}
+
+// OCR補助
+function scanPriceOCR(e){
+  let t=prompt('価格入力');
+  if(!t)return;
+  let n=t.replace(/[^\d]/g,'');
+  if(!amazon.value)amazon.value=n;
+  else mercari.value=n;
+}
+
+// バーコード
+async function scanBarcode(e){
+  if(!('BarcodeDetector'in window))return;
+  const file=e.target.files[0];
+  const img=await createImageBitmap(file);
+  const detector=new BarcodeDetector({formats:['ean_13']});
+  const codes=await detector.detect(img);
+  if(codes[0])keyword.value=codes[0].rawValue;
+}
+
+// コピペ自動
+document.addEventListener('paste',(e)=>{
+  let t=e.clipboardData.getData('text');
+  let n=t.replace(/[^\d]/g,'');
+  if(document.activeElement.tagName==='INPUT'&&n){
+    document.activeElement.value=n;
+  }
+});
 </script>
 </body>
 </html>
